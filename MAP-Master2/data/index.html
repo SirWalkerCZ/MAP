@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Maturitní Projekt</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html {
+      font-family: Arial;
+      display: flexbox;
+      margin: 5px auto;
+      text-align: center;
+      background-color: white;
+      color: black;
+    }
+
+    h2 {
+      font-size: 3rem;
+      text-align: center;
+    }
+
+    .header {
+      padding: 60px;
+      text-align: center;
+      background: #1abc9c;
+      color: white;
+      font-size: 30px;
+    }
+
+    .button {
+      background-color: #003a02;
+      /* Green */
+      border: none;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      color: rgb(205, 200, 200);
+    }
+
+    .labels {
+      background-color: rgb(205, 200, 200);
+      padding: 15px 32px;
+      margin: 5px auto;
+      display: inline-block;
+      color: black;
+    }
+
+    .gauge {
+      position: relative;
+      border-radius: 50%/100% 100% 0 0;
+      background-color: var(--color, #a22);
+      overflow: hidden;
+      display: inline-block;
+    }
+
+    .gauge:before {
+      content: "";
+      display: block;
+      padding-top: 50%;
+      /* ratio of 2:1*/
+    }
+
+    .gauge .chart {
+      overflow: hidden;
+    }
+
+    .gauge .mask {
+      position: absolute;
+      left: 20%;
+      right: 20%;
+      bottom: 0;
+      top: 40%;
+      background-color: #fff;
+      border-radius: 50%/100% 100% 0 0;
+    }
+
+    .gauge .percentage {
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      bottom: 0;
+      right: -1px;
+      background-color: var(--background, #aaa);
+      transform: rotate(var(--rotation));
+      transform-origin: bottom center;
+      transition-duration: 600;
+    }
+
+    .gauge:hover {
+      --rotation: 100deg;
+    }
+
+    .gauge .value {
+      position: absolute;
+      bottom: 0%;
+      left: 0;
+      width: 100%;
+      text-align: center;
+    }
+
+    .gauge .min {
+      position: absolute;
+      bottom: 0;
+      left: 5%;
+    }
+
+    .gauge .max {
+      position: absolute;
+      bottom: 0;
+      right: 5%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h2>Maturitni Projekt</h2>
+    <button  class="button" id="init">Get Time From Device</button>
+    <button class="button" id="testDownload">Download Buffer</button>
+    <button class="button" id="testClear">Clear Buffer</button>
+  </div>
+  <p>Current Temperature</p>
+  <div class="gauge" id="temp" style="width: 200px; --rotation:83deg; --color:#5cb85c; --background:#e9ecef;">
+    <div class="percentage"></div>
+    <div class="mask"></div>
+    <span class="value" id="airValue">%airValue%</span>
+  </div>
+  <p>Desired Temperature</p>
+  <div class="gauge" id="pot" style="width: 200px; --rotation:83deg; --color:#5cb85c; --background:#e9ecef;">
+    <div class="percentage"></div>
+    <div class="mask"></div>
+    <span class="value" id="desired">%desired%</span>
+  </div>
+  <div>
+    <div class="labels">
+      <p>
+        <span>My MAC:</span>
+        <span id="macAddress">%macAdress%</span>
+      </p>
+      <p>
+        <span>System Time:</span>
+        <span id="date">%date%</span>
+      </p>
+      <p>
+        <span>Current Time:</span>
+        <span id="date2">%date%</span>
+      </p>
+      <p>
+        <span>Runtime:</span>
+        <span id="runtime">%runtime%</span>
+      </p>
+    </div>
+  </div>
+</body>
+<script>
+
+  window.onload = function () { //možná sem movni estabilish network funkci, třeba to bude praktičtější
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("macAddress").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/macAddress", true);
+    xhttp.send();
+  };
+
+  setInterval(function () { //bere si čas od mastera, pro ověření správnosti
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("date").innerHTML = this.responseText;
+        console.log("date"+this.responseText);
+      }
+    };
+    xhttp.open("GET", "/date", true);
+    xhttp.send();
+    var currentdate = new Date();
+    var date = currentdate.getFullYear()+'-'+(currentdate.getMonth()+1)+'-'+currentdate.getDate();
+    var time = currentdate.getHours() + ":" + currentdate.getMinutes() + ":" + currentdate.getSeconds();
+    document.getElementById("date2").innerHTML = date+' '+time;
+  }, 1000);
+  setInterval(function () { //runtime od mastera
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("runtime").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/runtime", true);
+    xhttp.send();
+
+  }, 1000);
+  document.getElementById("init").onclick = function () {
+    var currentdate = new Date();
+    var seconds = Math.round(currentdate.getTime() / 1000); //získávám momentální čas v sekundách, na ms kašlu
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", "/init");
+    xhr.send(seconds);
+    document.getElementById("init").disabled = true;
+  };
+  setInterval(function () { //runtime od mastera
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("temp").style.setProperty('--rotation', this.responseText+'deg');
+        var value = this.responseText;
+        var min = 0;
+        var max = 100;
+        var min2 = 1000;
+        var max2 = 3000;
+        var value2 = ((value - min) / (max - min)) * (max2 - min2) + min2;
+        console.log(value2/100 + " °C");
+        document.getElementById("airValue").innerHTML = value2-10/100 + " °C";
+      }
+    };
+    xhttp.open("GET", "/air", true);
+    xhttp.send();
+
+  }, 1000);
+  setInterval(function () { //runtime od mastera
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("pot").style.setProperty('--rotation', this.responseText+'deg');
+        //map the value from this.responseText to 1000-3000
+        var value = this.responseText;
+        var min = 0;
+        var max = 100;
+        var min2 = 1000;
+        var max2 = 3000;
+        var value2 = ((value - min) / (max - min)) * (max2 - min2) + min2;
+        console.log(value2/100 + " °C");
+        document.getElementById("desired").innerHTML = value2-10/100 + " °C";
+      }
+    };
+    xhttp.open("GET", "/pot", true);
+    xhttp.send();
+
+  }, 100);
+
+  document.getElementById("testDownload").onclick = function () {
+    location.href = "/download";
+  };
+  document.getElementById("testClear").onclick = function () {
+    location.href = "/clear";
+  };
+
+</script>
+
+</html>
